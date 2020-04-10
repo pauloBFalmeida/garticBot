@@ -1,8 +1,9 @@
 from PIL import Image
 from time import sleep, time
 import pyautogui
+import configuracoes
 
-arquivo = 'asno3.jpg'
+# arquivo = 'asno3.jpg'		# old
 
 def get_cor(pixel):
 	r = pixel[0]
@@ -19,13 +20,13 @@ def get_cor(pixel):
 def invertDupla(entrada):
 	return (entrada[1],entrada[0])
 
-def borda():
+def borda(nome):
+	arquivo = nome			# com base no nome passado
 	# img = Image.open('test5.jpg')
 	img = Image.open(arquivo)
 	largura, altura = img.size
 	qtde_pixels = largura * altura
 	pixels = img.getdata() # pixeis em linha, comecando do canto sup esq
-	img.close()
 
 	# crio uma borda falsa com brancos
 	linhas  = (altura+2)
@@ -240,20 +241,29 @@ def borda():
 		pontosI.append(invertDupla(p))
 
 	# desenha na tela -------------------------------------------------------
-	draw(pontosI)
+	draw(pontosI, largura, altura)
 
-def draw(pontos):
-	duracao = 30 / len(pontos)
+def draw(pontos, largura, altura):
+	# duracao = configuracoes.get_from_file('duracao')
+	inicio 	= configuracoes.get_from_file('canto_sup_esq')
+	fim 	= configuracoes.get_from_file('canto_inf_dir')
+	tamanho = (fim[0] - inicio[0], fim[1] - inicio[1])
+	print('inicio')
+	print (inicio)
+	print (fim)
+	print (tamanho)
+
+
+	duracao = 40 / len(pontos)
 	# duracao = 0
 	arrastar = False
 	p_antigo = ()
 
-	img = Image.open(arquivo)
-	largura, altura = img.size
-	img.close()
-	inicio = (250, 200)   # gartic
-	tamanho = (425, 250)
-	# inicio = (100, 200)
+	# img = Image.open(arquivo)
+	# largura, altura = img.size
+	# inicio = (250, 200)   # gartic
+	# tamanho = (425, 250)
+	# inicio = (100, 200)	#paint
 	# tamanho = (425, 250)
 	multi = tamanho[0]/largura
 	if (multi * altura > tamanho[1]):
@@ -306,10 +316,10 @@ def test():
 
 
 
-millis1 = int(round(time() * 1000))
+# millis1 = int(round(time() * 1000))
 # desenhar2()
-borda()
+# borda()
 # test()
-
-millis2 = int(round(time() * 1000))
-print('time '+str(millis2-millis1))
+#
+# millis2 = int(round(time() * 1000))
+# print('time '+str(millis2-millis1))
