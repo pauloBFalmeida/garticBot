@@ -1,11 +1,12 @@
 #! python3
-from PIL import Image, ImageDraw, ImageColor, ImagePalette, ImageEnhance, ImageFilter
+from PIL import Image, ImageDraw, ImageColor, ImagePalette, ImageEnhance, ImageFilter, ImageStat
 import sys
 
 tamanho = (100, 100)
 
 def quebrar_cores(im):
-	im = Image.open('passaro.jpg')	# teste
+	# im = Image.open('passaro.jpg')	# teste
+	im = Image.open('asno4.jpg')	# teste
 	im_rgb = list(Image.Image.split(im))	# red green blue
 
 	# red = im_rgb[0]		# teste extrai somente o vermelho pra mostras
@@ -18,47 +19,97 @@ def quebrar_cores(im):
 	# red.putdata(saida)
 	# red.show()
 
-	pixel_valor = 55
-	blur_radio	= 2
+	# pixel_valor = 55
+	pixel_valor = 255//2
+	blur_radio	= 3
+	valor_media = 255 - 5
 
 	data_rgb = []
-	for i in range(len(im_rgb)):
-		im_rgb[i] = im_rgb[i].filter(ImageFilter.BoxBlur(radius=blur_radio))
-		# im_rgb[i] = Image.eval(im_rgb[i], (lambda x: 255 if x > (255-pixel_valor) else 0))
-		im_rgb[i] = Image.eval(im_rgb[i], (lambda x: 0 if x > (255-pixel_valor) else 255))		# se tiver cor 0, preto 255
+	# coloco 0 nos pixeis coloridos, e 255 nos sem cor
+	# crio uma imagem com a cor preta representando a sua respectiva cor
+	for i in range(3):
+		# im_rgb[i] = im_rgb[i].filter(ImageFilter.BoxBlur(radius=blur_radio))
+		im_rgb[i] = Image.eval(im_rgb[i], (lambda x: 0 if x > (255-pixel_valor) else 255))	# se tiver cor 0, sem cor 255
 		data_rgb.append(im_rgb[i].getdata())
 
-	for i in im_rgb:
+	# for i in im_rgb:
 		# i.show()
-		print(i.getpixel((0,0)))
+		# print(i.getpixel((0,0)))
 
+	tamanho = len(data_rgb[0])
 	# crio a parte preta vendo onde nenhuma das cores se encontram
-	pixels_b = [0 for _ in range(len(data_rgb[0]))]
-	for data in data_rgb:
-		for i in range(len(data)):	# i de cada pixel
-			pixels_b[i] = pixels_b[i] + data[i]
-	for i in range(len(pixels_b)):
-		if pixels_b[i] == 255*3:
-			pixels_b[i] = 0			# pixel com cor preta
-		else:
-			pixels_b[i] = 255
+	pixels_b = [255   for _ in range(tamanho)]
+	encontro = [False for _ in range(tamanho)]	# para remover a mistura de mais de uma cor
+	for i in range(tamanho):	# i de cada pixel
+		soma = 0
+		for data in data_rgb:	# passo pelo pixel i das 3 cores
+			soma = soma + data[i]
+		if 	 soma == 255*3:		# se nao tiver encontro entre as cores (255 = branco = pixel sem cor)
+			pixels_b[i] = 0		# pixel preto
+		elif soma < 255*2:		# pelo menos 2 cores se encontraram (0+0+255, 0+0+0)
+			encontro[i] = True
 
+	# crio uma imagem com a cor preta representando o preto
 	im_b = Image.new("L",im_rgb[0].size)
 	im_b.putdata(pixels_b)
 
+	# for i in im_rgb:
+	# 	i.show()
 
-	# removo onde as cores se encontram (branco ou outra)
-	for i in range(len(im_rgb)):
-		# se for tiver 0 em mais de uma das im, removo de ambas
+	# removo onde as cores se encontram (onde tem pixel preto em mais de uma imagem)
+	# se tiver 0 em mais de uma das im, removo de ambas
+	# removo a mistura de mais de uma cor
+	nova_data_rgb = []
+	for data in data_rgb:	# data de cada cor
+		nova_data = []
+		for i in range(tamanho):	# i de cada pixel
+			pixel = data[i]
+			if encontro[i]:
+				pixel = 255	# removo o pixel caso de encontro
+			nova_data.append(pixel)
+		nova_data_rgb.append(nova_data)	# add a nova data pra nova imagem da cor
+
+	for i in range(3):
+		im_t = Image.new("L",im_rgb[0].size)
+		im_t.putdata(nova_data_rgb[i])
+		im_rgb[i] = im_t
+
+	# calcula a media do valor dos pixels, e adiciona somente os com menos de valor_media
+	# saida = [None for _ in range(4)]
+	# ims = im_rgb + [im_b]
+	# for i in range(4):
+	# 	stat = ImageStat.Stat(ims[i])
+	# 	if stat.mean[0] < valor_media:
+	# 		saida[i] = ims[i]
+
+	saida = im_rgb + [im_b]
+
+	for i in saida:
+		try:
+			# i.filter(ImageFilter.CONTOUR).show()
+			i = i.filter(ImageFilter.BoxBlur(radius=2))
+			i = Image.eval(i, (lambda x: 0 if x > (255-pixel_valor) else 255))	# se tiver cor 0, sem cor 255
+			# i.filter(ImageFilter.CONTOUR).show()
+			# i.show()
+		except:
+			print('i')
+
+	for j in range(4):
+		i = saida[j]
+		i = i.filter(ImageFilter.BoxBlur(radius=2))
+		i = Image.eval(i, (lambda x: 0 if x > (255-pixel_valor) else 255))	# se tiver cor 0, sem cor 255
+		i.save('cavalin'+str(j)+'.jpg')
 
 
 
 
+	# print(im_rgb[0].sum())
 	# im_b.show()
 	# # im_b.filter(ImageFilter.CONTOUR).show()
 	# for i in im_rgb:
 	# 	i.show()
-		# # i.filter(ImageFilter.CONTOUR).show()
+	# 	# i.filter(ImageFilter.CONTOUR).show()
+
 
 	# for i in range(len(imagens)):
 	# 	imagens[i] = imagens[i].filter(ImageFilter.CONTOUR)
