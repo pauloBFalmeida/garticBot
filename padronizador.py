@@ -1,12 +1,14 @@
 #! python3
-from PIL import Image, ImageDraw, ImageColor, ImagePalette, ImageEnhance, ImageFilter, ImageStat
+from PIL import Image, ImageDraw, ImageColor, ImagePalette, ImageEnhance, ImageFilter, ImageStat, ImageOps
 import sys
 
-tamanho = (100, 100)
+tamanho = (200, 200)
 
-def quebrar_cores(im):
+def quebrar_cores(nome):
 	# im = Image.open('passaro.jpg')	# teste
-	im = Image.open('asno4.jpg')	# teste
+	# im = Image.open('asno4.jpg')	# teste
+	# im = Image.open(nome)
+	im = ajustar_imagem(nome)
 	im_rgb = list(Image.Image.split(im))	# red green blue
 
 	# red = im_rgb[0]		# teste extrai somente o vermelho pra mostras
@@ -19,10 +21,11 @@ def quebrar_cores(im):
 	# red.putdata(saida)
 	# red.show()
 
-	# pixel_valor = 55
+	# pixel_valor = 100
 	pixel_valor = 255//2
 	blur_radio	= 3
-	valor_media = 255 - 5
+	valor_media = 255 - 5	# n usado
+	raio_remocao = 2
 
 	data_rgb = []
 	# coloco 0 nos pixeis coloridos, e 255 nos sem cor
@@ -82,23 +85,74 @@ def quebrar_cores(im):
 	# 	if stat.mean[0] < valor_media:
 	# 		saida[i] = ims[i]
 
-	saida = im_rgb + [im_b]
 
-	for i in saida:
-		try:
-			# i.filter(ImageFilter.CONTOUR).show()
-			i = i.filter(ImageFilter.BoxBlur(radius=2))
-			i = Image.eval(i, (lambda x: 0 if x > (255-pixel_valor) else 255))	# se tiver cor 0, sem cor 255
-			# i.filter(ImageFilter.CONTOUR).show()
-			# i.show()
-		except:
-			print('i')
+	#old
+	# saida = im_rgb + [im_b]
+	# retorno = []
+	#
+	# j = 0
+	# for i in saida:
+	# 	try:
+	# 		# i.filter(ImageFilter.CONTOUR).show()
+	# 		i = i.filter(ImageFilter.BoxBlur(radius=blur_radio))
+	# 		i = Image.eval(i, (lambda x: 255 if x > (255-pixel_valor) else 0))	# se tiver cor 0, sem cor 255
+	# 		i = i.filter(ImageFilter.CONTOUR)
+	# 		i.show()
+	# 		# i.save('cavalin'+str(j)+'.jpg')
+	# 		retorno.append(i.getdata())
+	# 	except:
+	# 		print('i')
+	# 		retorno.append(None)
+	# 	j = j + 1
 
-	for j in range(4):
-		i = saida[j]
-		i = i.filter(ImageFilter.BoxBlur(radius=2))
-		i = Image.eval(i, (lambda x: 0 if x > (255-pixel_valor) else 255))	# se tiver cor 0, sem cor 255
-		i.save('cavalin'+str(j)+'.jpg')
+
+
+	contornos = []
+	# contorno da imagem preta
+	im_b = im_b.filter(ImageFilter.BoxBlur(radius=blur_radio))
+	im_b = Image.eval(im_b, (lambda x: 255 if x > (255-pixel_valor) else 0))	# se tiver cor 0, sem cor 255
+	im_b = im_b.filter(ImageFilter.CONTOUR)
+	contornos = [im_b]
+
+
+	larg, altu = im_rgb[0].size
+	for im in im_rgb:
+		# contorno da im
+		im = im.filter(ImageFilter.BoxBlur(radius=blur_radio))
+		im = Image.eval(im, (lambda x: 255 if x > (255-pixel_valor) else 0))	# se tiver cor 0, sem cor 255
+		im = im.filter(ImageFilter.CONTOUR)
+		data = im.getdata()
+		# removo da im_b os pixeis em volta do contorno preto
+		for i in range(raio_remocao, altu-raio_remocao):	# n passo pelos cantos da im
+			for j in range(raio_remocao, larg-raio_remocao):
+				if data[i*larg + j] == 0:	# se pixel preto, 'removo' os pixeis de im_b no entorno
+					for y in range(-raio_remocao,raio_remocao+1):  		# pelas linha acima e abaixo
+						for x in range(-raio_remocao,raio_remocao+1):	# pelos lados
+							im_b.putpixel( ((j+x),(i+y)), 255 )
+		# add im aos contornos
+		contornos.append(im)
+
+	# atualizo a im_b (dps de remover os contornos rgb)
+	contornos[0] = im_b
+
+	# pego as im data
+	retorno = []
+	for im in contornos:
+		# im.show()
+		retorno.append(im.getdata())
+
+
+
+
+	# for j in range(4):
+	# 	i = saida[j]
+	# 	i = i.filter(ImageFilter.BoxBlur(radius=2))
+	# 	i = Image.eval(i, (lambda x: 0 if x > (255-pixel_valor) else 255))	# se tiver cor 0, sem cor 255
+	# 	i = ImageOps.invert(i)
+	# 	i = i.filter(ImageFilter.CONTOUR)
+	# 	i.save('cavalin'+str(j)+'.jpg')
+
+
 
 
 
@@ -118,9 +172,25 @@ def quebrar_cores(im):
 	# 	# imagens[i].save('pas_'+str(i)+'.jpg')
 	# 	imagens[i].show()
 
+	retorno.append(im.size)
+	#	0	  1		2		3		4
+	# [red, green, blue, black, (largura, altura)]
+	return retorno
 
 
-def ajustar_imagem(arquivo):
+
+def ajustar_imagem(nome):
+	im = Image.open(nome)
+	largura, altura = im.size
+	multi = tamanho[0] / largura		# proporcao com base na largura (pra alcancar o tamanho)
+	if altura*multi > tamanho[1]:		# se a altura passar do tamanho
+		multi = tamanho[1] / altura		# proporcao com base na altura
+	nova_largura = int(largura*multi)
+	nova_altura  = int(altura*multi)
+	nova_im = im.resize((nova_largura, nova_altura), Image.LANCZOS)	# mudo o tamanho
+	return nova_im
+
+def algo_antigo():
 	arquivo = 'palheta3.jpg'
 	im = Image.open(arquivo)
 	largura, altura = im.size
@@ -130,7 +200,6 @@ def ajustar_imagem(arquivo):
 	nova_largura = int(largura*multi)
 	nova_altura  = int(altura*multi)
 	nova_im = im.resize((nova_largura, nova_altura), Image.LANCZOS)	# mudo o tamanho
-
 	# im = ImageEnhance.Contrast(im)		# aumento o contraste da imagem
 	# im.enhance(2.0).show()
 
@@ -404,7 +473,7 @@ def main():
 
 # main()
 
-quebrar_cores('')
+# quebrar_cores('')
 
 # testo1()
 # testo2()
