@@ -59,7 +59,7 @@ def get_canto_sup_esq(img):
 	confianca = 1.0
 	cords = None
 	while confianca > 0.7:
-		cords = get_cords('canto_sup_esq.jpg', True, confianca, img)
+		cords = get_cords('canto_sup_esq.jpg', False, confianca, img)
 		confianca = confianca - 0.05
 	return cords
 
@@ -67,7 +67,7 @@ def get_canto_inf_dir(img):
 	confianca = 1.0
 	cords = None
 	while confianca > 0.7:
-		cords = get_cords('canto_inf_dir.jpg', True, confianca, img)
+		cords = get_cords('canto_inf_dir.jpg', False, confianca, img)
 		confianca = confianca - 0.05
 	return cords
 
@@ -120,7 +120,8 @@ def automatica():
 
 def manual_exec(item):
 	print("Coloque o mouse sobre "+item)
-	for i in range(2,0,-1):	# contagem regressiva
+	segundos = 4
+	for i in range(segundos,0,-1):	# contagem regressiva
 		print(i)
 		sleep(1)
 	print("Posição capturada")
@@ -163,11 +164,10 @@ def manual():
 			]
 		# conteudo do arquivo em 'conteudo'
 		file = open(arquivo_config, 'rb')
-		unpickler = pickle.Unpickler(file)
 		conteudo = []
 		while True:
 		    try:
-		        conteudo.append(unpickler.load())
+		        conteudo.append(pickle.load(file))
 		    except EOFError: break
 		file.close()
 
@@ -222,5 +222,5 @@ def test():
 	print('fim')
 
 # inicio()
-#test()
+test()
 # print(get_arquivo_config())

@@ -393,6 +393,7 @@ def otimizar(pontos, nivel):
 def draw(pontos, largura, altura):
 	# duracao = configuracoes.get_from_file('duracao')
 	inicio 	= configuracoes.get_from_file('canto_sup_esq')
+	inicio = (inicio[0], int(inicio[1] + inicio[1] * 0.25))
 	fim 	= configuracoes.get_from_file('canto_inf_dir')
 	tamanho = (fim[0] - inicio[0], fim[1] - inicio[1])
 	print('inicio')
@@ -401,7 +402,7 @@ def draw(pontos, largura, altura):
 	print (tamanho)
 
 	distancia = distancia_total(pontos)
-	dur_dis = 20 / distancia	# duracao por distancia
+	dur_dis = 35 / distancia	# duracao por distancia
 
 	duracao = 40 / len(pontos)
 	if duracao > 1.5: duracao = 1.5
@@ -454,7 +455,7 @@ def principal(nome):
 	# padronizador.ajustar_imagem(nome)
 	bordas = padronizador.quebrar_cores(nome)
 	largura, altura = bordas[4]
-	pontos = sequencia(bordas[0], largura, altura)
+	pontos = sequencia(bordas[1], largura, altura)
 	print('dist')
 	print(distancia_total(pontos))
 	# print()
@@ -470,7 +471,7 @@ def principal(nome):
 	sleep(1)
 	draw(pontos, largura, altura)
 
-principal('asno4.jpg')
+principal('asno2.jpg')
 
 def test():
 	pontos = [(3,3),(2,2),(1,1)]
